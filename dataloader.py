@@ -28,7 +28,7 @@ class Dataloader():
                                        download=True, transform=transform)
 
 
-        # Data loaders ((B, 784) per itration)
+        # Data loaders (MNIST: (B, 784) per itration)
         self.trainloader = torch.utils.data.DataLoader(self.trainset, batch_size=batch_size,
                                           shuffle=True)
         self.testloader = torch.utils.data.DataLoader(self.testset, batch_size=batch_size,
