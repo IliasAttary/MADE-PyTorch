@@ -10,6 +10,7 @@ The objective was to reproduce the core ideas of MADE on **binarized MNIST**, wi
 ### Sample generations
 
 Below are samples generated via pixel-by-pixel sampling after training:
+
 ![MADE samples](results/made_samples.png)
 
 ### Notes
