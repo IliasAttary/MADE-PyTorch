@@ -39,19 +39,25 @@ class Dataloader():
             self.visualize(self.trainloader)
         return self.trainloader, self.testloader
     
-    def visualize(self, dataloader, num_images=8):
+    def visualize(self, dataloader, num_images=20, max_per_row=10):
         images, labels = next(iter(dataloader))
         num_images = min(num_images, images.size(0))
 
-        fig, axes = plt.subplots(1, num_images, figsize=(num_images*2, 2))
-        if num_images == 1:
-            axes = [axes]
+        ncols = min(num_images, max_per_row)
+        nrows = (num_images + max_per_row - 1) // max_per_row
+
+        fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 2, nrows * 2))
+        axes = np.array(axes).reshape(-1)  # always 1D
 
         for i in range(num_images):
             img = images[i].detach().cpu().view(28, 28).numpy()
             axes[i].imshow(img, cmap='gray', vmin=0, vmax=1)
             axes[i].set_title(f"{int(labels[i])}")
             axes[i].axis('off')
+
+        # hide any unused axes
+        for j in range(num_images, nrows * ncols):
+            axes[j].axis('off')
 
         plt.tight_layout()
         plt.show()
