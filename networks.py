@@ -1,6 +1,8 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 class MaskedLinear(nn.Linear):
     # W = (out_features, in_features)
@@ -43,8 +45,6 @@ class MADE(nn.Module):
         # Build masks
         self._init_masks()
 
-        
-
     def _init_masks(self):
         D = self.input_size
         masked_layers = [layer for layer in self.layers if isinstance(layer, MaskedLinear)]
@@ -76,6 +76,53 @@ class MADE(nn.Module):
         m_next = degrees[-1]
         mask = (m_next[:, None] > m_prev[None, :]).float()
         masked_layers[-1].set_mask(mask)
-        
-        
 
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+    def sample(self, num_samples, visualize=False, grid=(10, 10), save_path="./results/made_samples.png"):
+        self.eval()
+
+        with torch.no_grad():
+            samples = torch.zeros(num_samples, self.input_size, device=next(self.parameters()).device)
+            for i in range(self.input_size):
+                logits = self.forward(samples)  # (num_samples, input_size)
+                probs = torch.sigmoid(logits[:, i])
+                samples[:, i] = torch.bernoulli(probs)
+
+        if visualize:
+        
+            rows, cols = grid
+            n_show = min(num_samples, rows * cols)
+
+            imgs = samples[:n_show].detach().cpu().view(n_show, 28, 28)
+
+            fig, axes = plt.subplots(rows, cols, figsize=(cols, rows))
+            # make axes always 2D
+            if rows == 1 and cols == 1:
+                axes = [[axes]]
+            elif rows == 1:
+                axes = [axes]
+            elif cols == 1:
+                axes = [[ax] for ax in axes]
+
+            k = 0
+            for r in range(rows):
+                for c in range(cols):
+                    ax = axes[r][c]
+                    if k < n_show:
+                        ax.imshow(imgs[k], cmap="gray", vmin=0, vmax=1)
+                    ax.axis("off")
+                    k += 1
+
+            plt.tight_layout(pad=0.1)
+
+            if save_path is not None:
+                os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+                plt.savefig(save_path, bbox_inches="tight", pad_inches=0.02)
+
+            plt.show()
+
+        return samples
